@@ -14,6 +14,7 @@
   "devDependencies": {
     "@types/qs": "^6.9.1",
     "@types/seedrandom": "^2.4.27",
+    "@types/chroma-js": "~2.0.0",
     "clean-webpack-plugin": "~3.0.0",
     "copy-webpack-plugin": "^5.1.1",
     "css-loader": "~3.5.3",
@@ -35,6 +36,7 @@
     "lodash": "^4.17.11",
     "qs": "^6.9.3",
     "rxjs": "^6.3.3",
-    "seedrandom": "^2.4.4"
+    "seedrandom": "^2.4.4",
+    "chroma-js": "~2.1.0"
   }
 }

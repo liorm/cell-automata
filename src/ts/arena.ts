@@ -9,6 +9,7 @@ export abstract class AutomataArena {
     get depth() {
         return this.m_depth;
     }
+    abstract get maxAge(): number;
 
     private m_ages: number[];
     private m_nextAges: number[];
@@ -17,8 +18,8 @@ export abstract class AutomataArena {
                           private m_height,
                           private m_depth
     ) {
-        this.m_ages = new Array<number>(this.width * this.height * this.depth);
-        this.m_nextAges = new Array<number>(this.width * this.height * this.depth);
+        this.m_ages = new Array<number>(this.width * this.height * this.depth).fill(0);
+        this.m_nextAges = new Array<number>(this.width * this.height * this.depth).fill(0);
     }
 
     /**
@@ -56,13 +57,17 @@ export abstract class AutomataArena {
     protected abstract evolveLogic(resultsArray: number[]): void;
 }
 
-const TILES_X = 50;
-const TILES_Y = 50;
+const TILES_X = 100;
+const TILES_Y = 100;
 const TILES_Z = 1;
 
 export class GameOfLifeArena extends AutomataArena {
     constructor() {
         super(TILES_X, TILES_Y, TILES_Z);
+    }
+
+    get maxAge(): number {
+        return 4;
     }
 
     private isCellAlive(x, y, z) {
@@ -89,17 +94,22 @@ export class GameOfLifeArena extends AutomataArena {
                     this.isCellAlive(x + 1, y + 0, 0) +
                     this.isCellAlive(x + 1, y + 1, 0);
 
-                const isAlive = this.isCellAlive(x, y, 0);
+                const age = this.getCellAge(x, y, 0);
 
                 let newAge = 0;
                 if (livingCells < 2 || livingCells > 3)
-                    newAge = 0;
+                    newAge = age - 1;
 
                 if (livingCells === 3)
-                    newAge = 1;
+                    newAge = age + 1;
 
-                if (livingCells === 2 && isAlive)
-                    newAge = 1;
+                if (livingCells === 2 && age > 0)
+                    newAge = age;
+
+                if (newAge < 0)
+                    newAge = 0;
+                if (newAge > this.maxAge)
+                    newAge = this.maxAge;
 
                 resultsArray[this.toIndex(x, y, 0)] = newAge;
             }

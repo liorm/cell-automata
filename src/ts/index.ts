@@ -8,18 +8,18 @@ let renderer;
 let mouse;
 
 let cubeGeo;
-let cubeMaterial;
+let cubeMaterials: THREE.Material[] = [];
 
-const cells: THREE.Object3D[] = [];
+const cells: THREE.Mesh[] = [];
 function toIndex(x, y, z) {
   return z * arena.width * arena.height + y * arena.width + x;
 }
 
-const CELL_W = 5;
-const CELL_H = 5;
-const CELL_D = 5;
+const CELL_W = 2;
+const CELL_H = 2;
+const CELL_D = 2;
 
-let EVOLUTION_INTERVAL_MS = 100;
+let EVOLUTION_INTERVAL_MS = 0;
 
 let lastEvolutionTime = performance.now();
 
@@ -32,10 +32,13 @@ function init() {
   scene = new THREE.Scene()
   scene.background = new THREE.Color(Colors.background)
 
-  cubeGeo = new THREE.BoxBufferGeometry(CELL_W, CELL_H, CELL_D)
-  cubeMaterial = new THREE.MeshBasicMaterial({
-    color: Colors.cellColorRange[0],
-  })
+  cubeGeo = new THREE.BoxBufferGeometry(CELL_W, CELL_H, CELL_D);
+  for (let age = 0; age < arena.maxAge; ++age) {
+    const mat = new THREE.MeshBasicMaterial({
+      color: Colors.cellColorRange((age + 1) / (arena.maxAge)).hex(),
+    });
+    cubeMaterials.push(mat);
+  }
 
   //
   // Bounding box
@@ -56,7 +59,7 @@ function init() {
   // cells
   for (let y = 0; y < arena.height; ++y) {
     for (let x = 0; x < arena.width; ++x) {
-      const voxel = new THREE.Mesh(cubeGeo, cubeMaterial);
+      const voxel = new THREE.Mesh(cubeGeo, cubeMaterials[0]);
       voxel.position.set(x * CELL_W, y * CELL_H, arena.depth / 2 * CELL_D);
       voxel.visible = false;
       scene.add(voxel);
@@ -82,7 +85,7 @@ function init() {
   scene.add(directionalLight);
 
   camera = new THREE.PerspectiveCamera(
-      45,
+      25,
       window.innerWidth / window.innerHeight,
       1,
       10000
@@ -122,7 +125,13 @@ function evolve() {
     for (let x = 0; x < arena.width; ++x) {
       for (let z = 0; z < arena.depth; ++z) {
         const voxel = cells[toIndex(x, y, z)];
-        voxel.visible = arena.getCellAge(x, y, z) > 0;
+        const age = arena.getCellAge(x, y, z);
+        if ( age > 0 ) {
+          voxel.visible = true;
+          voxel.material = cubeMaterials[age - 1];
+        } else {
+          voxel.visible = false;
+        }
       }
     }
   }
