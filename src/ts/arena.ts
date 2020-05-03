@@ -67,8 +67,10 @@ export class GameOfLifeArena extends AutomataArena {
     }
 
     get maxAge(): number {
-        return 4;
+        return 1;
     }
+    private readonly m_survivalRange = [2, 3];
+    private readonly m_birthRange = [3];
 
     private isCellAlive(x, y, z) {
         if ( x < 0 || y < 0 || z < 0)
@@ -96,15 +98,14 @@ export class GameOfLifeArena extends AutomataArena {
 
                 const age = this.getCellAge(x, y, 0);
 
-                let newAge = 0;
-                if (livingCells < 2 || livingCells > 3)
-                    newAge = age - 1;
-
-                if (livingCells === 3)
-                    newAge = age + 1;
-
-                if (livingCells === 2 && age > 0)
-                    newAge = age;
+                let newAge = age - 1;
+                if (age > 0) {
+                    if (this.m_survivalRange.indexOf(livingCells) >= 0)
+                        newAge = age + 1;
+                } else {
+                    if (this.m_birthRange.indexOf(livingCells) >= 0)
+                        newAge = 1;
+                }
 
                 if (newAge < 0)
                     newAge = 0;
