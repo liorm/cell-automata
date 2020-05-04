@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {Colors} from "./colors";
-import {AutomataArena, GameOfLifeArena} from "./arena";
+import {Arena3D, AutomataArena, GameOfLifeArena} from "./arena";
+import {PerfWindow} from "./utils";
 
 let camera;
 let scene;
@@ -23,7 +24,9 @@ let EVOLUTION_INTERVAL_MS = 0;
 
 let lastEvolutionTime = performance.now();
 
-const arena: AutomataArena = new GameOfLifeArena();
+const arena: AutomataArena = new Arena3D();
+const evolvePerf = new PerfWindow("evolve");
+const transferPerf = new PerfWindow("transfer");
 
 init()
 render()
@@ -57,13 +60,15 @@ function init() {
   scene.add( boxWireframe );
 
   // cells
-  for (let y = 0; y < arena.height; ++y) {
-    for (let x = 0; x < arena.width; ++x) {
-      const voxel = new THREE.Mesh(cubeGeo, cubeMaterials[0]);
-      voxel.position.set(x * CELL_W, y * CELL_H, arena.depth / 2 * CELL_D);
-      voxel.visible = false;
-      scene.add(voxel);
-      cells.push(voxel);
+  for (let z = 0; z < arena.depth; ++z) {
+    for (let y = 0; y < arena.height; ++y) {
+      for (let x = 0; x < arena.width; ++x) {
+        const voxel = new THREE.Mesh(cubeGeo, cubeMaterials[0]);
+        voxel.position.set(x * CELL_W, y * CELL_H, z * CELL_D);
+        voxel.visible = false;
+        scene.add(voxel);
+        cells.push(voxel);
+      }
     }
   }
 
@@ -116,9 +121,10 @@ function render() {
 }
 
 function evolve() {
-  const now = performance.now();
-
+  const start = performance.now();
   arena.evolve();
+
+  evolvePerf.add(performance.now() - start);
 
   // Apply next.
   for (let y = 0; y < arena.height; ++y) {
@@ -136,7 +142,9 @@ function evolve() {
     }
   }
 
-  lastEvolutionTime = now;
+  transferPerf.add(performance.now() - start);
+
+  lastEvolutionTime = start;
   render();
 
   if (EVOLUTION_INTERVAL_MS === 0) {

@@ -57,13 +57,9 @@ export abstract class AutomataArena {
     protected abstract evolveLogic(resultsArray: number[]): void;
 }
 
-const TILES_X = 100;
-const TILES_Y = 100;
-const TILES_Z = 1;
-
 export class GameOfLifeArena extends AutomataArena {
     constructor() {
-        super(TILES_X, TILES_Y, TILES_Z);
+        super(100, 100, 1);
     }
 
     get maxAge(): number {
@@ -113,6 +109,75 @@ export class GameOfLifeArena extends AutomataArena {
                     newAge = this.maxAge;
 
                 resultsArray[this.toIndex(x, y, 0)] = newAge;
+            }
+        }
+    }
+}
+
+export class Arena3D extends AutomataArena {
+    constructor() {
+        super(50, 50, 50);
+    }
+
+    get maxAge(): number {
+        return 60;
+    }
+    private readonly m_survivalRange = [2, 3];
+    private readonly m_birthRange = [3];
+
+    private isCellAlive(x, y, z) {
+        if ( x < 0 || y < 0 || z < 0)
+            return 0;
+
+        if ( x >= this.width || y >= this.height || z >= this.depth )
+            return 0;
+
+        return this.getCellAge(x, y, z) > 0 ? 1 : 0;
+    }
+
+    protected evolveLogic(resultsArray: number[]): void {
+        for (let x = 0; x < this.width; ++x) {
+            for (let y = 0; y < this.height; ++y) {
+                for (let z = 0; z < this.depth; ++z) {
+
+                    // Count friends
+                    let livingCells = 0;
+                    for (let slice = -1; slice <= 1; ++slice) {
+                        const sliceCells =
+                            this.isCellAlive(x - 1, y - 1, z + slice) +
+                            this.isCellAlive(x - 1, y + 0, z + slice) +
+                            this.isCellAlive(x - 1, y + 1, z + slice) +
+                            this.isCellAlive(x + 0, y - 1, z + slice) +
+                            this.isCellAlive(x + 0, y + 1, z + slice) +
+                            this.isCellAlive(x + 1, y - 1, z + slice) +
+                            this.isCellAlive(x + 1, y + 0, z + slice) +
+                            this.isCellAlive(x + 1, y + 1, z + slice);
+
+                        livingCells += sliceCells;
+
+                        if (slice !== 0) {
+                            livingCells += this.isCellAlive(x, y, z + slice);
+                        }
+                    }
+
+                    const age = this.getCellAge(x, y, z);
+
+                    let newAge = age - 1;
+                    if (age > 0) {
+                        if (this.m_survivalRange.indexOf(livingCells) >= 0)
+                            newAge = age + 1;
+                    } else {
+                        if (this.m_birthRange.indexOf(livingCells) >= 0)
+                            newAge = 1;
+                    }
+
+                    if (newAge < 0)
+                        newAge = 0;
+                    if (newAge > this.maxAge)
+                        newAge = this.maxAge;
+
+                    resultsArray[this.toIndex(x, y, z)] = newAge;
+                }
             }
         }
     }
